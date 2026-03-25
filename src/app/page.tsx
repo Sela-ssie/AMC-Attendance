@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
 import Link from "next/link";
+import AttendanceTrendChart from "./AttendanceTrendChart";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +14,12 @@ export default async function DashboardPage() {
     .select("*", { count: "exact", head: true })
     .eq("is_active", true);
 
-  // Last 8 services with attendance counts
+  // Last 24 services with attendance counts (for chart + table)
   const { data: recentServices } = await supabase
     .from("services")
     .select("id, date, attendance(count)")
     .order("date", { ascending: false })
-    .limit(8);
+    .limit(24);
 
   const services = (recentServices ?? []).map((s) => ({
     id: s.id,
@@ -31,6 +32,16 @@ export default async function DashboardPage() {
     lastService && totalMembers
       ? Math.round((lastService.count / totalMembers) * 100)
       : null;
+
+  // Chart data — oldest first
+  const chartData = [...services].reverse().map((s) => ({
+    label: new Date(s.date + "T00:00:00").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    present: s.count,
+    rate: totalMembers ? Math.round((s.count / totalMembers) * 100) : 0,
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -66,6 +77,19 @@ export default async function DashboardPage() {
             Register New Member
           </Link>
         </div>
+
+        {/* Attendance trend chart */}
+        {chartData.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+            <h2 className="font-semibold text-gray-800 mb-4">
+              Attendance Trend
+              <span className="text-sm font-normal text-gray-400 ml-2">
+                past {chartData.length} Sunday{chartData.length !== 1 ? "s" : ""}
+              </span>
+            </h2>
+            <AttendanceTrendChart data={chartData} />
+          </div>
+        )}
 
         {/* Recent services table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100">

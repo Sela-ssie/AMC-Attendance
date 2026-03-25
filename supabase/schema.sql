@@ -49,6 +49,9 @@ create policy "Authenticated users can insert members"
 create policy "Authenticated users can update members"
   on public.members for update to authenticated using (true);
 
+create policy "Authenticated users can delete members"
+  on public.members for delete to authenticated using (true);
+
 create policy "Authenticated users can read services"
   on public.services for select to authenticated using (true);
 

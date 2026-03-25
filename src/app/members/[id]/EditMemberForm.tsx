@@ -27,6 +27,8 @@ export default function EditMemberForm({ member }: { member: Member }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value, type, checked } = e.target;
@@ -61,6 +63,22 @@ export default function EditMemberForm({ member }: { member: Member }) {
     router.refresh();
   }
 
+  async function handleDelete() {
+    setDeleting(true);
+    // Attendance rows are deleted automatically via ON DELETE CASCADE
+    const { error: dbError } = await supabase
+      .from("members")
+      .delete()
+      .eq("id", member.id);
+    if (dbError) {
+      setError("Failed to delete member. " + dbError.message);
+      setDeleting(false);
+      setConfirmDelete(false);
+      return;
+    }
+    router.push("/members");
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <Field label="Full Name *" name="name" value={form.name} onChange={handleChange} />
@@ -93,6 +111,42 @@ export default function EditMemberForm({ member }: { member: Member }) {
         </button>
         {saved && (
           <span className="text-sm text-green-600 font-medium">✓ Saved</span>
+        )}
+      </div>
+
+      {/* Delete section */}
+      <div className="pt-6 mt-6 border-t border-gray-100">
+        {!confirmDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+          >
+            Delete this member…
+          </button>
+        ) : (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <p className="text-sm font-medium text-red-800 mb-3">
+              Are you sure? This will permanently delete <strong>{member.name}</strong> and all their attendance records.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-medium rounded-lg px-4 py-2 text-sm transition-colors"
+              >
+                {deleting ? "Deleting…" : "Yes, delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </form>
