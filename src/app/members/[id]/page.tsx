@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import AttendanceChart from "./AttendanceChart";
 import EditMemberForm from "./EditMemberForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function MemberDetailPage({
   params,
 }: {

@@ -29,6 +29,29 @@ export default function AttendanceClient({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [serviceDate, setServiceDate] = useState(today);
+  const [loadingDate, setLoadingDate] = useState(false);
+
+  // When the date changes, load existing attendance for that date
+  async function handleDateChange(newDate: string) {
+    setServiceDate(newDate);
+    setSaved(false);
+    setLoadingDate(true);
+    const { data: svc } = await supabase
+      .from("services")
+      .select("id")
+      .eq("date", newDate)
+      .maybeSingle();
+    if (svc) {
+      const { data: att } = await supabase
+        .from("attendance")
+        .select("member_id")
+        .eq("service_id", svc.id);
+      setSelected(new Set((att ?? []).map((a: { member_id: string }) => a.member_id)));
+    } else {
+      setSelected(new Set());
+    }
+    setLoadingDate(false);
+  }
 
   const filteredMembers = useMemo(() => {
     const q = search.toLowerCase();
@@ -61,16 +84,24 @@ export default function AttendanceClient({
   async function handleSave() {
     setSaving(true);
     try {
-      // Upsert the service record
-      let serviceId = existingServiceId;
-      if (!serviceId) {
-        const { data, error } = await supabase
+      // Look up service by the selected date; create if it doesn't exist
+      let serviceId: string | null = null;
+      const { data: existing } = await supabase
+        .from("services")
+        .select("id")
+        .eq("date", serviceDate)
+        .maybeSingle();
+
+      if (existing) {
+        serviceId = existing.id;
+      } else {
+        const { data: created, error } = await supabase
           .from("services")
           .insert({ date: serviceDate })
           .select("id")
           .single();
         if (error) throw error;
-        serviceId = data.id;
+        serviceId = created.id;
       }
 
       // Delete existing attendance for this service then re-insert
@@ -105,7 +136,9 @@ export default function AttendanceClient({
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Take Attendance</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {presentCount} present · {absentCount} absent · {members.length} total
+            {loadingDate
+              ? "Loading attendance for selected date…"
+              : `${presentCount} present · ${absentCount} absent · ${members.length} total`}
           </p>
         </div>
 
@@ -113,7 +146,7 @@ export default function AttendanceClient({
           <input
             type="date"
             value={serviceDate}
-            onChange={(e) => setServiceDate(e.target.value)}
+            onChange={(e) => handleDateChange(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
@@ -235,7 +268,7 @@ export default function AttendanceClient({
       <div className="flex items-center gap-4">
         <button
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || loadingDate}
           className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl px-6 py-2.5 text-sm transition-colors"
         >
           {saving ? "Saving…" : "Save Attendance"}

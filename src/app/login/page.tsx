@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { login } from "./actions";
 
 export default function LoginPage() {
@@ -24,6 +25,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-md p-8">
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-3">
+            <Image src="/logo.png" alt="AMC Logo" width={72} height={72} className="rounded-full" />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">AMC Attendance</h1>
           <p className="text-sm text-gray-500 mt-1">Sign in to continue</p>
         </div>

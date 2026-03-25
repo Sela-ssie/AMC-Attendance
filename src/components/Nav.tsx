@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
 
@@ -17,7 +18,7 @@ export default function Nav() {
   return (
     <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
       <div className="flex items-center gap-1">
-        <span className="font-bold text-blue-700 text-lg mr-6">AMC</span>
+        <Image src="/logo.png" alt="AMC Logo" width={36} height={36} className="rounded-full mr-2" />
         {navLinks.map((link) => (
           <Link
             key={link.href}
