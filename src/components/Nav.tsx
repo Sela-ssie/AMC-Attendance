@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/attendance", label: "Take Attendance" },
   { href: "/members", label: "Members" },
   { href: "/members/new", label: "Register Member" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export default function Nav() {
